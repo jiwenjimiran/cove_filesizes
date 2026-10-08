@@ -1,6 +1,6 @@
 # Cove Filesizes
 
-Adds a standard database icon and file sizes to Cove's performer, studio, and video cards. Requires **Cove 1.5.1 or newer**.
+Adds a standard database icon and file sizes to Cove's performer, studio, and video cards, plus filesize filters on library lists and drilldowns. Requires **Cove 1.5.1 or newer**.
 
 - Performer: a line below age (or below the name when age is absent). The portrait becomes 18 pixels shorter to keep the overall card height unchanged.
 - Studio: joins the existing bottom row of scene, performer, image, and substudio counts.
@@ -13,10 +13,21 @@ Sizes use decimal KB, MB, GB, and TB, with at most one decimal place: 1234 GB be
 In **Settings → Extensions → Install from URL**, paste:
 
 ```text
-https://github.com/jiwenjimiran/cove_filesizes/releases/download/v1.0.2/io.github.jiwenjimiran.filesizes-1.0.2.zip
+https://github.com/jiwenjimiran/cove_filesizes/releases/download/v1.1.0/io.github.jiwenjimiran.filesizes-1.1.0.zip
 ```
 
 Alternatively download the ZIP from [the latest release](https://github.com/jiwenjimiran/cove_filesizes/releases/latest) and use **Install from ZIP**. Enable the extension and refresh Cove once.
+
+## Filesize filtering
+
+Open the list's **Filters**, add **Filesize (total, e.g. 10 GB)**, choose a comparison, and enter a size such as `500 MB`, `10 GB`, or `1.2 TB`. Units are decimal, matching the labels; values without units mean bytes.
+
+- **Greater Than / Less Than** compare the exact total against the entered size.
+- **Equals / Not Equals** accept either an exact size or an inclusive range, such as `500 MB..10 GB`.
+
+The filter is available on videos, performers, studios, images, galleries, audios, and texts, including their lists within detail/drilldown pages. Performer and studio filters compare the sum of attributed files, using the same counting rules as the card labels. Filtering happens before pagination and combines with the list's existing filters, ordering, and drilldown scope.
+
+On Cove 1.5.1, add Filesize as an ordinary top-level filter. It cannot be placed inside an advanced AND/OR condition group; such requests return an explanatory error. Sorting by filesize is not included.
 
 ## What is counted
 

@@ -1,3 +1,12 @@
+# 1.1.0
+
+- Add Filesize filters to videos, performers, studios, images, galleries, audios, and texts, including drilldown lists.
+- Compare total recorded bytes using Equals, Not Equals, Greater Than, or Less Than, with decimal KB/MB/GB/TB input. Equals and Not Equals also accept inclusive ranges such as `500 MB..10 GB`.
+- Apply filtering before native pagination while preserving other filters, ordering, counts, permissions, and drilldown scope. Performer/studio filters use the same attributed-file totals as their card labels.
+- On Cove 1.5.1, Filesize must be a top-level filter; nested advanced condition groups return an explanatory error.
+
+Validation: database comparisons for all seven entity/media kinds, unit and range validation, request middleware/authentication/permission checks, native performer/studio pagination against a read-only live library, PostgreSQL translation against Cove's full model, and existing card selection/layout regression checks.
+
 # 1.0.2
 
 - Keep filesize labels visible when video, performer, or studio cards are selected.

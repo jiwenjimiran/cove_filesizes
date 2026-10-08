@@ -3,15 +3,36 @@ using Cove.Data;
 using Cove.Filesizes;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Cove.Core.Auth;
 using System.Diagnostics;
 
-if (args.Contains("--live"))
+
+if (args.Contains("--live") || args.Contains("--live-filters"))
 {
     var liveConnection = Environment.GetEnvironmentVariable("COVE_FILESIZES_TEST_CONNECTION")
         ?? throw new Exception("Set COVE_FILESIZES_TEST_CONNECTION to a read-only PostgreSQL connection.");
     var principal = new CurrentPrincipalAccessor(); principal.Set(CovePrincipal.System());
     using var live = new CoveContext(new DbContextOptionsBuilder<CoveContext>().UseNpgsql(liveConnection, pg => pg.UseVector()).Options, principal);
+    if (args.Contains("--live-filters")) {
+        foreach (var kind in FilesizeFilter.Kinds) {
+            var timer = Stopwatch.StartNew();
+            var ids = await new FilesizeFilter("greaterthan", 1000000000, 1000000000).Apply(SizeQueries.AllTotals(live, kind)).Select(row => row.Id).ToArrayAsync();
+            Console.WriteLine($"LIVE filter {kind}: {ids.Length} matches in {timer.ElapsedMilliseconds} ms");
+            if (kind is "performer" or "studio") {
+                using var narrowed = new FilesizeReadContext(new DbContextOptionsBuilder<CoveContext>((DbContextOptions<CoveContext>)live.GetService<Microsoft.EntityFrameworkCore.Infrastructure.IDbContextOptions>()).UseModel(live.Model).Options, principal, kind, ids);
+                var find = new Cove.Core.Interfaces.FindFilter { Page = 1, PerPage = 2, Sort = "name" };
+                var result = kind == "performer"
+                    ? await new Cove.Data.Repositories.PerformerRepository(narrowed).FindAsync(new Cove.Core.Interfaces.PerformerFilter(), find)
+                        .ContinueWith(task => (Ids: task.Result.Items.Select(item => item.Id).ToArray(), Count: task.Result.TotalCount))
+                    : await new Cove.Data.Repositories.StudioRepository(narrowed).FindAsync(new Cove.Core.Interfaces.StudioFilter(), find)
+                        .ContinueWith(task => (Ids: task.Result.Items.Select(item => item.Id).ToArray(), Count: task.Result.TotalCount));
+                if (result.Count != ids.Length || result.Ids.Any(id => !ids.Contains(id)) || result.Ids.Length > 2) throw new Exception("Native repository pagination mismatch.");
+                Console.WriteLine($"PASS native {kind} repository: {result.Ids.Length} items on page 1, {result.Count} matching entities");
+            }
+        }
+        return;
+    }
     foreach (var kind in new[] { "performer", "studio", "video" })
     {
         var ids = kind switch {
@@ -61,6 +82,19 @@ var studioBatch = await SizeQueries.LoadAsync(db, "studio", [1, 2]);
 if (studioBatch.Single(entry => entry.Id == 1).Bytes != 25000 || studioBatch.Single(entry => entry.Id == 2).Bytes != 99000)
     throw new Exception("Studio batch totals must remain separate.");
 Console.WriteLine("PASS mixed studio batch");
+foreach (var kind in FilesizeFilter.Kinds) {
+    var totals = await SizeQueries.AllTotals(db, kind).ToListAsync();
+    var matches = await new FilesizeFilter("greaterthan", 5000, 5000).Apply(SizeQueries.AllTotals(db, kind)).Select(row => row.Id).ToListAsync();
+    if (!matches.Order().SequenceEqual(totals.Where(row => row.Bytes > 5000).Select(row => row.Id).Order())) throw new Exception($"Wrong {kind} filesize matches.");
+    Console.WriteLine($"PASS database-side {kind} filtering");
+}
+if (FilesizeFilter.ParseBytes("1.2 TB") != 1200000000000L || FilesizeFilter.ParseBytes("500 MB") != 500000000L) throw new Exception("Unit conversion failed.");
+using (var narrowed = new FilesizeReadContext(new DbContextOptionsBuilder<CoveContext>(options).UseModel(db.Model).Options, new CurrentPrincipalAccessor(), "performer", [2, 3])) {
+    if (await narrowed.Performers.CountAsync() != 2 || await narrowed.Performers.OrderBy(row => row.Id).Skip(1).Select(row => row.Id).SingleAsync() != 3) throw new Exception("Filter must execute before count and pagination.");
+    if (await narrowed.Studios.CountAsync() != 2) throw new Exception("Other root sets must remain available.");
+}
+Console.WriteLine("PASS request-scoped pre-pagination filtering");
+await FilterTests.Run(db);
 // Check the production provider can translate all three queries without making a connection.
 using var postgres = new CoveContext(new DbContextOptionsBuilder<CoveContext>().UseNpgsql("Host=localhost;Database=test;Username=test", options => options.UseVector()).Options);
 foreach (var kind in new[] { "performer", "studio", "video" })
@@ -71,6 +105,10 @@ foreach (var kind in new[] { "performer", "studio", "video" })
         if (kind != "video" && !sql.Contains("GROUP BY", StringComparison.OrdinalIgnoreCase)) throw new Exception("Totals must aggregate the batch together.");
     }
     Console.WriteLine($"PASS PostgreSQL translation: {kind}");
+}
+foreach (var kind in FilesizeFilter.Kinds) {
+    _ = new FilesizeFilter("between", 1000, 1000000000).Apply(SizeQueries.AllTotals(postgres, kind)).ToQueryString();
+    Console.WriteLine($"PASS PostgreSQL filesize filter translation: {kind}");
 }
 
 sealed class QueryContext(DbContextOptions<CoveContext> options) : CoveContext(options)

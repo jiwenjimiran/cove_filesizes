@@ -1,8 +1,8 @@
 {
   "id": "io.github.jiwenjimiran.filesizes",
   "name": "Filesizes",
-  "version": "1.0.2",
-  "description": "Show total file sizes on performer, studio, and video cards.",
+  "version": "1.1.0",
+  "description": "Show total file sizes on cards and filter library lists by filesize.",
   "author": "jiwenji",
   "url": "https://github.com/jiwenjimiran/cove_filesizes",
   "kind": "extension",
