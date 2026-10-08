@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Cove.Filesizes</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Version>1.0.0</Version>
+    <CoveSourceRoot Condition="'$(CoveSourceRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\cove</CoveSourceRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="$(CoveSourceRoot)/src/Cove.Data/Cove.Data.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="$(CoveSourceRoot)/src/Cove.Sdk/Cove.Sdk.csproj" Private="false" ExcludeAssets="runtime" />
+    <None Update="extension.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    <None Include="../../frontend/*.mjs;../../frontend/*.css" Link="assets/%(Filename)%(Extension)" CopyToPublishDirectory="Always" />
+  </ItemGroup>
+</Project>

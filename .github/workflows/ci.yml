@@ -1,0 +1,41 @@
+name: Validate
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cove_filesizes
+      - uses: actions/checkout@v4
+        with:
+          repository: yourcove/cove
+          ref: e4f691eee80c57e3a01689661e7f409f559b5249
+          path: cove
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: cove_filesizes/package-lock.json
+      - run: npm ci
+        working-directory: cove_filesizes
+      - run: npm test
+        working-directory: cove_filesizes
+      - run: npx playwright install chromium
+        working-directory: cove_filesizes
+      - run: node tests/layout.mjs
+        working-directory: cove_filesizes
+      - run: dotnet run --project tests/Backend/Backend.csproj -c Release -p:CoveCiVersion=true
+        working-directory: cove_filesizes
+      - run: ./scripts/package.ps1
+        working-directory: cove_filesizes
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: filesizes-package
+          path: cove_filesizes/artifacts/*.zip

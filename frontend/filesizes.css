@@ -1,0 +1,15 @@
+.cove-filesize {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+  color: var(--color-muted);
+  font-size: 11px;
+  line-height: 14px;
+  white-space: nowrap;
+}
+.cove-filesize svg { width: 14px; height: 14px; flex-shrink: 0; }
+.cove-filesize-performer { align-self: flex-start; height: 14px; padding: 0; }
+.cove-filesize-portrait { aspect-ratio: auto !important; height: var(--cove-filesize-portrait-height); }
+.cove-filesize-footer { display: flex; justify-content: center; align-items: center; gap: 4px; min-height: 28px; padding: 6px 8px; position: relative; z-index: 10; }
+.cove-filesize-divider { border: 0; border-top: 1px solid var(--color-border); margin: 0; }

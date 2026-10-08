@@ -1,0 +1,14 @@
+{
+  "id": "io.github.jiwenjimiran.filesizes",
+  "name": "Filesizes",
+  "version": "1.0.0",
+  "description": "Show total file sizes on performer, studio, and video cards.",
+  "author": "jiwenji",
+  "url": "https://github.com/jiwenjimiran/cove_filesizes",
+  "kind": "extension",
+  "categories": ["ui", "library"],
+  "minCoveVersion": "1.5.1",
+  "entryDll": "Cove.Filesizes.dll",
+  "jsBundle": "assets/index.mjs",
+  "cssBundle": "assets/filesizes.css"
+}
