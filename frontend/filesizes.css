@@ -13,3 +13,11 @@
 .cove-filesize-portrait { aspect-ratio: auto !important; height: var(--cove-filesize-portrait-height); }
 .cove-filesize-footer { display: flex; justify-content: center; align-items: center; gap: 4px; min-height: 28px; padding: 6px 8px; position: relative; z-index: 10; }
 .cove-filesize-divider { border: 0; border-top: 1px solid var(--color-border); margin: 0; }
+.cove-filesize-native-editor { display: none !important; }
+.cove-filesize-range { display: grid; gap: 20px; }
+.cove-filesize-range-row { display: grid; gap: 6px; font-size: 14px; }
+.cove-filesize-range-row small { color: var(--color-muted); font-size: 12px; }
+.cove-filesize-range-controls { display: flex; gap: 8px; }
+.cove-filesize-range-controls input, .cove-filesize-range-controls select { min-height: 44px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-input, var(--color-card)); color: inherit; padding: 8px 12px; font: inherit; }
+.cove-filesize-range-controls input { width: 100%; min-width: 0; }
+.cove-filesize-range-controls select { flex-shrink: 0; }

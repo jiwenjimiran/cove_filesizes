@@ -2,6 +2,7 @@ import { createElement, useEffect, useRef, useState } from '@cove/runtime/react'
 import { useQuery } from '@cove/runtime/react-query';
 import { extensionFetch } from '@cove/runtime/api';
 import { watchCards, loadSizes } from './cards.mjs';
+import { watchFilesizeFilters } from './filters.mjs';
 
 function useSizes(kind, ids) {
   return useQuery({
@@ -19,7 +20,8 @@ export function Filesizes() {
   const video = useSizes('video', ids.video);
   useEffect(() => {
     watcher.current = watchCards(document, setIds);
-    return () => { watcher.current.stop(); watcher.current = null; };
+    const filters = watchFilesizeFilters(document);
+    return () => { filters.stop(); watcher.current.stop(); watcher.current = null; };
   }, []);
   useEffect(() => { watcher.current?.update('performer', performer.isError ? [] : performer.data ?? []); }, [performer.data, performer.isError]);
   useEffect(() => { watcher.current?.update('studio', studio.isError ? [] : studio.data ?? []); }, [studio.data, studio.isError]);

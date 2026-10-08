@@ -1,3 +1,11 @@
+# 1.2.0
+
+- Replace the Filesize comparison/text controls with numerical Minimum (inclusive) and Maximum (inclusive) inputs, each with an independent MB/GB dropdown.
+- Empty minimum means 0; empty maximum means unlimited. Both empty leaves the list unrestricted by size.
+- Preserve filtering across all supported lists and drilldowns, including summed performer/studio totals, native pagination, and permissions.
+
+Validation: real React controlled-input integration, clearing/reopening and cleanup checks, Chromium range-control visibility/responsive checks, inclusive/open-bound database regressions, and existing card/backend tests.
+
 # 1.1.0
 
 - Add Filesize filters to videos, performers, studios, images, galleries, audios, and texts, including drilldown lists.

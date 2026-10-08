@@ -30,6 +30,8 @@ jobs:
         working-directory: cove_filesizes
       - run: node tests/layout.mjs
         working-directory: cove_filesizes
+      - run: node tests/filter-layout.mjs
+        working-directory: cove_filesizes
       - run: dotnet run --project tests/Backend/Backend.csproj -c Release -p:CoveCiVersion=true
         working-directory: cove_filesizes
       - run: ./scripts/package.ps1

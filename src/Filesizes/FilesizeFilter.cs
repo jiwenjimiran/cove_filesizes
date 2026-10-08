@@ -12,8 +12,8 @@ public sealed record FilesizeFilter(string Modifier, long Minimum, long Maximum)
     private static readonly Regex Size = new(@"^\s*(\d+(?:\.\d+)?)\s*(B|KB|MB|GB|TB)?\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     public static List<UIListFilterContribution> Declarations(string owner) => Kinds.Select(kind => new UIListFilterContribution(
         Id: $"{owner}:filesize:{kind}", EntityType: kind == "gallery" ? "galleries" : kind + "s",
-        Label: "Filesize (total, e.g. 10 GB)", CriterionType: "string", ExtensionId: owner,
-        FilterKey: Key, Modifiers: ["EQUALS", "NOT_EQUALS", "GREATER_THAN", "LESS_THAN"], Order: 60)).ToList();
+        Label: "Filesize", CriterionType: "string", ExtensionId: owner,
+        FilterKey: Key, Modifiers: ["EQUALS"], Order: 60)).ToList();
 
     public static long ParseBytes(string value)
     {
@@ -39,7 +39,8 @@ public sealed record FilesizeFilter(string Modifier, long Minimum, long Maximum)
         {
             var range = text.Split("..", StringSplitOptions.TrimEntries);
             if (range.Length != 2) throw new ArgumentException("Enter an inclusive range such as 500 MB..10 GB.");
-            var min = ParseBytes(range[0]); var max = ParseBytes(range[1]);
+            var min = range[0] == "" ? 0 : ParseBytes(range[0]);
+            var max = range[1] == "" ? long.MaxValue : ParseBytes(range[1]);
             if (min > max) throw new ArgumentException("The lower filesize must not exceed the upper filesize.");
             return new(modifier, min, max);
         }

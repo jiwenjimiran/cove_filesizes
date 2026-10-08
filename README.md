@@ -13,17 +13,18 @@ Sizes use decimal KB, MB, GB, and TB, with at most one decimal place: 1234 GB be
 In **Settings → Extensions → Install from URL**, paste:
 
 ```text
-https://github.com/jiwenjimiran/cove_filesizes/releases/download/v1.1.0/io.github.jiwenjimiran.filesizes-1.1.0.zip
+https://github.com/jiwenjimiran/cove_filesizes/releases/download/v1.2.0/io.github.jiwenjimiran.filesizes-1.2.0.zip
 ```
 
 Alternatively download the ZIP from [the latest release](https://github.com/jiwenjimiran/cove_filesizes/releases/latest) and use **Install from ZIP**. Enable the extension and refresh Cove once.
 
 ## Filesize filtering
 
-Open the list's **Filters**, add **Filesize (total, e.g. 10 GB)**, choose a comparison, and enter a size such as `500 MB`, `10 GB`, or `1.2 TB`. Units are decimal, matching the labels; values without units mean bytes.
+Open the list's **Filters** and select **Filesize**. Enter numerical values in **Minimum (inclusive)** and **Maximum (inclusive)**, choosing **MB** or **GB** independently for each bound. Decimal values are supported. Units are decimal, matching the card labels.
 
-- **Greater Than / Less Than** compare the exact total against the entered size.
-- **Equals / Not Equals** accept either an exact size or an inclusive range, such as `500 MB..10 GB`.
+- An empty minimum means **0**, with no lower limit.
+- An empty maximum means **unlimited**, with no upper limit.
+- Both endpoints are included. For example, minimum **500 MB** and maximum **10 GB** includes filesizes equal to either endpoint. Leave both empty for no size restriction.
 
 The filter is available on videos, performers, studios, images, galleries, audios, and texts, including their lists within detail/drilldown pages. Performer and studio filters compare the sum of attributed files, using the same counting rules as the card labels. Filtering happens before pagination and combines with the list's existing filters, ordering, and drilldown scope.
 
@@ -46,6 +47,7 @@ npm ci
 npm test
 npx playwright install chromium
 node tests/layout.mjs
+node tests/filter-layout.mjs
 dotnet run --project tests/Backend/Backend.csproj -c Release -p:CoveCiVersion=true
 ./scripts/package.ps1
 ```

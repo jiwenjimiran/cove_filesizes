@@ -23,7 +23,7 @@ public sealed class FilesizesExtension : IExtension, IUIExtension, IApiExtension
 {
     public string Id => "io.github.jiwenjimiran.filesizes";
     public string Name => "Filesizes";
-    public string Version => "1.1.0";
+    public string Version => "1.2.0";
     public string? Description => "Show total file sizes on cards and filter library lists by filesize.";
     public string? Author => "jiwenji";
     public string? Url => "https://github.com/jiwenjimiran/cove_filesizes";

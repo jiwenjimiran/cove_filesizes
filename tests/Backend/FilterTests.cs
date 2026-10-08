@@ -16,7 +16,7 @@ static class FilterTests
     {
         var declarations = FilesizeFilter.Declarations("test");
         if (declarations.Count != 7 || declarations.Any(row => row.FilterKey != FilesizeFilter.Key || row.FilterId != null
-            || row.Modifiers!.Contains("BETWEEN"))) throw new Exception("Filters must use Cove's executable top-level string controls.");
+            || !row.Modifiers!.SequenceEqual(new[] { "EQUALS" }))) throw new Exception("Filters must use only the custom range editor.");
         foreach (var value in new[] { "-1 GB", "NaN", "10 XB", "0.1 B", "999999999999999999999999999999 TB" })
             ExpectInvalid(() => FilesizeFilter.ParseBytes(value));
         foreach (var (modifier, value, expected) in new[] {
@@ -30,6 +30,13 @@ static class FilterTests
             if (!actual.SequenceEqual(expected)) throw new Exception($"Wrong {modifier} matches.");
         }
         ExpectInvalid(() => FilesizeFilter.Parse(JsonSerializer.SerializeToElement(new { modifier = "BETWEEN", value = "20 GB..10 GB" })));
+        foreach (var (value, expected) in new[] {
+            ("..25 KB", new[] { 1, 3, 4 }), ("25 KB..", new[] { 1, 2 }), ("..", new[] { 1, 2, 3, 4 }),
+            ("0 MB..0 GB", new[] { 4 }), ("0.003 MB..0.000025 GB", new[] { 1, 3 }) }) {
+            var parsed = FilesizeFilter.Parse(JsonSerializer.SerializeToElement(new { modifier = "EQUALS", value }));
+            var actual = await parsed.Apply(SizeQueries.AllTotals(db, "performer")).Select(row => row.Id).Order().ToArrayAsync();
+            if (!actual.SequenceEqual(expected)) throw new Exception($"Wrong inclusive/open range matches for {value}.");
+        }
         var accessor = new CurrentPrincipalAccessor();
         using var provider = new ServiceCollection().AddSingleton(db).AddSingleton<ICurrentPrincipalAccessor>(accessor)
             .AddSingleton<IPerformerRepository>(new PerformerRepository(db)).BuildServiceProvider();
