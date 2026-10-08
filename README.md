@@ -13,7 +13,7 @@ Sizes use decimal KB, MB, GB, and TB, with at most one decimal place: 1234 GB be
 In **Settings → Extensions → Install from URL**, paste:
 
 ```text
-https://github.com/jiwenjimiran/cove_filesizes/releases/download/v1.0.0/io.github.jiwenjimiran.filesizes-1.0.0.zip
+https://github.com/jiwenjimiran/cove_filesizes/releases/download/v1.0.1/io.github.jiwenjimiran.filesizes-1.0.1.zip
 ```
 
 Alternatively download the ZIP from [the latest release](https://github.com/jiwenjimiran/cove_filesizes/releases/latest) and use **Install from ZIP**. Enable the extension and refresh Cove once.
@@ -40,3 +40,7 @@ dotnet run --project tests/Backend/Backend.csproj -c Release -p:CoveCiVersion=tr
 ```
 
 Packaging also accepts `-CoveSourceRoot` for an alternative checkout path. Browser checks use a fixture matching Cove's card layout; they verify age/no-age placement, unchanged performer heights at three widths, responsive resizing, footer placement, and cleanup. Backend checks execute against SQLite fixtures and verify PostgreSQL translation against the full Cove model.
+
+Performer and studio aggregation filters attribution before joining files and groups totals across each batch. This avoids repeatedly scanning the file table for every card, which caused timeouts in v1.0.0 on large libraries. The v1.0.1 queries were also checked read-only against a running Cove 1.5.1 library with over one million recorded files.
+
+To repeat the optional performance check, set `COVE_FILESIZES_TEST_CONNECTION` to a PostgreSQL connection string with `Options=-c default_transaction_read_only=on -c statement_timeout=5000`, then run the backend test command with `-- --live`. It reads 40 existing entities of each kind, checks total validity, and fails if a batch takes over five seconds. It never seeds or changes the live database.

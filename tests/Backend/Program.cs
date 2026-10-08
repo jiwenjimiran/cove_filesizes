@@ -3,6 +3,30 @@ using Cove.Data;
 using Cove.Filesizes;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Cove.Core.Auth;
+using System.Diagnostics;
+
+if (args.Contains("--live"))
+{
+    var liveConnection = Environment.GetEnvironmentVariable("COVE_FILESIZES_TEST_CONNECTION")
+        ?? throw new Exception("Set COVE_FILESIZES_TEST_CONNECTION to a read-only PostgreSQL connection.");
+    var principal = new CurrentPrincipalAccessor(); principal.Set(CovePrincipal.System());
+    using var live = new CoveContext(new DbContextOptionsBuilder<CoveContext>().UseNpgsql(liveConnection, pg => pg.UseVector()).Options, principal);
+    foreach (var kind in new[] { "performer", "studio", "video" })
+    {
+        var ids = kind switch {
+            "performer" => await live.Performers.OrderBy(p => p.Id).Select(p => p.Id).Take(40).ToArrayAsync(),
+            "studio" => await live.Studios.OrderBy(s => s.Id).Select(s => s.Id).Take(40).ToArrayAsync(),
+            _ => await live.Videos.OrderBy(v => v.Id).Select(v => v.Id).Take(40).ToArrayAsync()
+        };
+        var timer = Stopwatch.StartNew();
+        var entries = await SizeQueries.LoadAsync(live, kind, ids);
+        if (entries.Count != ids.Length || entries.Any(entry => entry.Bytes < 0)) throw new Exception("Invalid live totals.");
+        if (timer.ElapsedMilliseconds > 5000) throw new Exception("Live totals exceeded the five-second regression budget.");
+        Console.WriteLine($"LIVE {kind}: {entries.Count} totals in {timer.ElapsedMilliseconds} ms");
+    }
+    return;
+}
 
 using var connection = new SqliteConnection("Data Source=:memory:");
 connection.Open();
@@ -23,17 +47,29 @@ using (var seed = new DbContext(new DbContextOptionsBuilder().UseSqlite(connecti
 }
 foreach (var (kind, id, expected) in new[] { ("performer", 1, 25000L), ("performer", 2, 99000L), ("performer", 3, 3000L), ("performer", 4, 0L), ("studio", 1, 25000L), ("video", 1, 3000L), ("video", 2, 3000L) })
 {
-    var entry = SizeQueries.For(db, kind, [id]).Single();
+    var entry = (await SizeQueries.LoadAsync(db, kind, [id])).Single();
     if (entry.Bytes != expected) throw new Exception($"{kind}/{id}: expected {expected}, got {entry.Bytes}");
     Console.WriteLine($"PASS {kind}/{id}: {entry.Bytes} bytes");
 }
-if (SizeQueries.For(db, "performer", [999]).Any()) throw new Exception("Missing entity must not fabricate a zero total.");
+if ((await SizeQueries.LoadAsync(db, "performer", [999])).Any()) throw new Exception("Missing entity must not fabricate a zero total.");
+var batch = await SizeQueries.LoadAsync(db, "performer", [1, 2, 3, 4, 999]);
+if (batch.Count != 4 || batch.Single(entry => entry.Id == 1).Bytes != 25000 || batch.Single(entry => entry.Id == 2).Bytes != 99000
+    || batch.Single(entry => entry.Id == 3).Bytes != 3000 || batch.Single(entry => entry.Id == 4).Bytes != 0)
+    throw new Exception("Batch totals must preserve attribution, clip deduplication, zeros, and missing entity behavior.");
+Console.WriteLine("PASS mixed performer batch");
+var studioBatch = await SizeQueries.LoadAsync(db, "studio", [1, 2]);
+if (studioBatch.Single(entry => entry.Id == 1).Bytes != 25000 || studioBatch.Single(entry => entry.Id == 2).Bytes != 99000)
+    throw new Exception("Studio batch totals must remain separate.");
+Console.WriteLine("PASS mixed studio batch");
 // Check the production provider can translate all three queries without making a connection.
 using var postgres = new CoveContext(new DbContextOptionsBuilder<CoveContext>().UseNpgsql("Host=localhost;Database=test;Username=test", options => options.UseVector()).Options);
 foreach (var kind in new[] { "performer", "studio", "video" })
 {
-    var sql = SizeQueries.For(postgres, kind, [1, 2]).ToQueryString();
-    if (!sql.Contains("sum(", StringComparison.OrdinalIgnoreCase)) throw new Exception("Expected database-side aggregation.");
+    foreach (var query in SizeQueries.Parts(postgres, kind, [1, 2])) {
+        var sql = query.ToQueryString();
+        if (!sql.Contains("sum(", StringComparison.OrdinalIgnoreCase)) throw new Exception("Expected database-side aggregation.");
+        if (kind != "video" && !sql.Contains("GROUP BY", StringComparison.OrdinalIgnoreCase)) throw new Exception("Totals must aggregate the batch together.");
+    }
     Console.WriteLine($"PASS PostgreSQL translation: {kind}");
 }
 
