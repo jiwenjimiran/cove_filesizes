@@ -17,7 +17,7 @@ public sealed class FilesizesExtension : IExtension, IUIExtension, IApiExtension
 {
     public string Id => "io.github.jiwenjimiran.filesizes";
     public string Name => "Filesizes";
-    public string Version => "1.0.1";
+    public string Version => "1.0.2";
     public string? Description => "Show total file sizes on performer, studio, and video cards.";
     public string? Author => "jiwenji";
     public string? Url => "https://github.com/jiwenjimiran/cove_filesizes";
@@ -27,7 +27,12 @@ public sealed class FilesizesExtension : IExtension, IUIExtension, IApiExtension
     public void ConfigureServices(IServiceCollection services, ExtensionContext context) { }
     public UIManifest GetUIManifest() => new()
     {
-        Slots = [new UISlotContribution(Id: $"{Id}:cards", Slot: "app-floating-ui", ExtensionId: Id, ComponentName: "Filesizes")]
+        Slots = [
+            new UISlotContribution(Id: $"{Id}:cards", Slot: "app-floating-ui", ExtensionId: Id, ComponentName: "Filesizes"),
+            new UISlotContribution(Id: $"{Id}:performer-identity", Slot: "performer-card-footer", ExtensionId: Id, ComponentName: "FilesizeCardIdentity"),
+            new UISlotContribution(Id: $"{Id}:studio-identity", Slot: "studio-card-footer", ExtensionId: Id, ComponentName: "FilesizeCardIdentity"),
+            new UISlotContribution(Id: $"{Id}:video-identity", Slot: "video-card-content", ExtensionId: Id, ComponentName: "FilesizeCardIdentity")
+        ]
     };
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {

@@ -1,3 +1,11 @@
+# 1.0.2
+
+- Keep filesize labels visible when video, performer, or studio cards are selected.
+- Identify cards through hidden public extension-slot context, including cards loaded while selection mode is already active.
+- Preserve known identities for embedded cards while Cove temporarily removes their navigation links.
+
+Validation: selection/deselection and selected-card recycling regression tests for all three card kinds, browser visibility and performer-height checks, and backend aggregation tests.
+
 # 1.0.1
 
 - Fix missing performer and studio filesize labels on large libraries: the original totals queries could time out before returning any labels.

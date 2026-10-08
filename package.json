@@ -1,1 +1,1 @@
-{"name":"cove-filesizes","version":"1.0.1","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.mjs"},"devDependencies":{"jsdom":"29.1.1","@playwright/test":"1.56.1"}}
+{"name":"cove-filesizes","version":"1.0.2","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.mjs"},"devDependencies":{"jsdom":"29.1.1","@playwright/test":"1.56.1"}}

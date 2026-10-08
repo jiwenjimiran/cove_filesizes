@@ -40,6 +40,23 @@ try {
   await page.locator('.performer').evaluateAll(cards => cards.forEach(card => card.style.width = '240px'));
   await page.evaluate(() => { window.watcher.update('studio', [{ id: 3, bytes: 3450000000000 }]); window.watcher.update('video', [{ id: 4, bytes: 6700000000 }]); });
   await page.waitForTimeout(100);
+  const unselectedHeights = await measure();
+  await page.locator('.entity-card, .video-card').evaluateAll(cards => cards.forEach(card => {
+    const link = card.querySelector(':scope > a');
+    card.dataset.restoreHref = link.getAttribute('href');
+    link.remove(); card.classList.add('ring-2');
+  }));
+  await page.waitForTimeout(80);
+  for (const label of await page.locator('.cove-filesize').all()) assert.ok(await label.isVisible());
+  assert.equal(await page.locator('.cove-filesize').count(), 4);
+  assert.deepEqual(await measure(), unselectedHeights);
+  await page.locator('.entity-card, .video-card').evaluateAll(cards => cards.forEach(card => {
+    const link = document.createElement('a'); link.href = card.dataset.restoreHref; card.prepend(link); card.classList.remove('ring-2');
+  }));
+  await page.waitForTimeout(80);
+  assert.equal(await page.locator('.cove-filesize').count(), 4);
+  assert.deepEqual(await measure(), unselectedHeights);
+  console.log('PASS labels stay visible on selection/deselection for all three kinds');
   await mkdir(new URL('../artifacts/', import.meta.url), { recursive: true });
   await page.screenshot({ path: new URL('../artifacts/cards-preview.png', import.meta.url).pathname.replace(/^\/(\w:)/, '$1') });
   const resized = await measure();

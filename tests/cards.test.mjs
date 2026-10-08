@@ -66,3 +66,47 @@ test('chunks requests, passes cancellation, and rejects failures', async () => {
   assert.equal(calls[0].options.signal, controller.signal);
   await assert.rejects(loadSizes('studio', [1], async () => ({ ok: false, status: 403 })), /403/);
 });
+
+test('selection and deselection preserve labels and query IDs for all card kinds', async () => {
+  for (const kind of ['performer', 'studio', 'video']) {
+    const dom = fixture(card(kind, 1));
+    const document = dom.window.document;
+    const snapshots = [];
+    const watcher = watchCards(document, ids => snapshots.push(ids));
+    watcher.update(kind, [{ id: 1, bytes: 1234000000 }]);
+    await tick();
+    const node = document.querySelector('.entity-card, .video-card');
+    const link = node.querySelector(':scope > a');
+    link.remove(); node.classList.add('ring-2');
+    await tick();
+    assert.equal(node.querySelector('.cove-filesize').textContent, '1.2 GB', kind);
+    assert.equal(snapshots.length, 1, 'selecting must not clear query IDs');
+    node.prepend(link); node.classList.remove('ring-2');
+    await tick();
+    assert.equal(node.querySelectorAll('.cove-filesize').length, 1, kind);
+    assert.equal(snapshots.length, 1);
+    watcher.stop(); dom.window.close();
+  }
+});
+
+test('slot identity supports cards mounted selected and updates recycled selected cards', async () => {
+  for (const kind of ['performer', 'studio', 'video']) {
+    const dom = fixture(card(kind, 1));
+    const document = dom.window.document;
+    const node = document.querySelector('.entity-card, .video-card');
+    node.querySelector(':scope > a').remove();
+    node.insertAdjacentHTML('beforeend', `<div class="card-extension"><span hidden data-cove-filesize-kind="${kind}" data-cove-filesize-id="1"></span></div>`);
+    assert.deepEqual(cardIdentity(node), { kind, id: 1 });
+    const snapshots = [];
+    const watcher = watchCards(document, ids => snapshots.push(ids));
+    watcher.update(kind, [{ id: 1, bytes: 1000 }, { id: 2, bytes: 2000 }]);
+    await tick();
+    assert.equal(node.querySelector('.cove-filesize').textContent, '1 KB');
+    node.querySelector('[data-cove-filesize-id]').setAttribute('data-cove-filesize-id', '2');
+    await tick();
+    assert.equal(node.querySelector('.cove-filesize').textContent, '2 KB');
+    assert.deepEqual(snapshots.at(-1)[kind], [2]);
+    assert.equal(node.querySelectorAll('.cove-filesize').length, 1);
+    watcher.stop(); assert.equal(node.querySelector('.cove-filesize'), null); dom.window.close();
+  }
+});

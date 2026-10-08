@@ -13,7 +13,7 @@ Sizes use decimal KB, MB, GB, and TB, with at most one decimal place: 1234 GB be
 In **Settings → Extensions → Install from URL**, paste:
 
 ```text
-https://github.com/jiwenjimiran/cove_filesizes/releases/download/v1.0.1/io.github.jiwenjimiran.filesizes-1.0.1.zip
+https://github.com/jiwenjimiran/cove_filesizes/releases/download/v1.0.2/io.github.jiwenjimiran.filesizes-1.0.2.zip
 ```
 
 Alternatively download the ZIP from [the latest release](https://github.com/jiwenjimiran/cove_filesizes/releases/latest) and use **Install from ZIP**. Enable the extension and refresh Cove once.

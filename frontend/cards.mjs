@@ -10,6 +10,14 @@ export function formatSize(bytes) {
 }
 
 export function cardIdentity(card) {
+  // Public slot context identifies cards even when selection mode removes navigation links.
+  const marker = [...card.querySelectorAll('[data-cove-filesize-kind][data-cove-filesize-id]')]
+    .find(node => node.closest('.entity-card, .video-card') === card);
+  if (marker) {
+    const kind = marker.getAttribute('data-cove-filesize-kind');
+    const id = Number(marker.getAttribute('data-cove-filesize-id'));
+    return ['performer', 'studio', 'video'].includes(kind) && Number.isSafeInteger(id) && id > 0 ? { kind, id } : null;
+  }
   const link = card.querySelector(':scope > a[href]');
   if (!link) return null;
   try {
@@ -55,6 +63,7 @@ function makeLabel(document) {
 export function watchCards(document, onIds) {
   const window = document.defaultView;
   const states = new Map();
+  const identities = new Map();
   const totals = { performer: new Map(), studio: new Map(), video: new Map() };
   let previousIds = '';
   let frame = null;
@@ -76,7 +85,12 @@ export function watchCards(document, onIds) {
     const ids = { performer: new Set(), studio: new Set(), video: new Set() };
     const seen = new Set();
     for (const card of document.querySelectorAll(selector)) {
-      const identity = cardIdentity(card);
+      let identity = cardIdentity(card);
+      if (identity) identities.set(card, identity);
+      // Some embedded cards have no identity slot. Keep their known identity while
+      // Cove temporarily removes the overlay; an existing but changed link wins.
+      else if (!card.querySelector(':scope > a[href]') && !card.querySelector('[data-cove-filesize-kind]')) identity = identities.get(card);
+      else identities.delete(card);
       if (!identity) continue;
       const { kind, id } = identity;
       ids[kind].add(id);
@@ -125,12 +139,13 @@ export function watchCards(document, onIds) {
       if (state.label.title !== title) { state.label.title = title; state.label.setAttribute('aria-label', title); }
     }
     for (const [card, state] of states) if (!seen.has(card)) remove(card, state);
+    for (const card of identities.keys()) if (!card.isConnected) identities.delete(card);
     const normalized = Object.fromEntries(Object.entries(ids).map(([kind, values]) => [kind, [...values].sort((a, b) => a - b)]));
     const key = JSON.stringify(normalized);
     if (key !== previousIds) { previousIds = key; onIds(normalized); }
   }
   const observer = new window.MutationObserver(schedule);
-  observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['href', 'class'] });
+  observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['href', 'class', 'data-cove-filesize-kind', 'data-cove-filesize-id'] });
   scan();
   return {
     update(kind, entries) { totals[kind] = new Map(entries.map(entry => [entry.id, entry.bytes])); schedule(); },
@@ -138,6 +153,7 @@ export function watchCards(document, onIds) {
       stopped = true; observer.disconnect();
       if (frame !== null) window.cancelAnimationFrame(frame);
       for (const [card, state] of states) remove(card, state);
+      identities.clear();
     },
   };
 }

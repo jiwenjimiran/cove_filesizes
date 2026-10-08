@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from '@cove/runtime/react';
+import { createElement, useEffect, useRef, useState } from '@cove/runtime/react';
 import { useQuery } from '@cove/runtime/react-query';
 import { extensionFetch } from '@cove/runtime/api';
 import { watchCards, loadSizes } from './cards.mjs';
@@ -26,4 +26,10 @@ export function Filesizes() {
   useEffect(() => { watcher.current?.update('video', video.isError ? [] : video.data ?? []); }, [video.data, video.isError]);
   return null;
 }
-export default { components: { Filesizes } };
+export function FilesizeCardIdentity({ performer, studio, video }) {
+  const kind = performer ? 'performer' : studio ? 'studio' : video ? 'video' : null;
+  const entity = performer ?? studio ?? video;
+  if (!kind || !Number.isSafeInteger(entity.id) || entity.id <= 0) return null;
+  return createElement('span', { hidden: true, 'data-cove-filesize-kind': kind, 'data-cove-filesize-id': entity.id });
+}
+export default { components: { Filesizes, FilesizeCardIdentity } };
